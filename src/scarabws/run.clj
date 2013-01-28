@@ -8,4 +8,3 @@
   (swap! scarabws.core/scarab scarabws.core/load-scarab)
   (run-jetty #'scarabws.web/app {:port 8050}))
 
-(-main)
