@@ -2,4 +2,5 @@
   (:use ring.adapter.jetty)
   (:require scarabws.web))
 
-(run-jetty #'scarabws.web/app {:port 8050})
+(defn -main [& args]
+  (run-jetty #'scarabws.web/app {:port 8050}))

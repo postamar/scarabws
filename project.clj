@@ -6,4 +6,6 @@
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [ring "1.1.8"]
                  [ring/ring-json "0.1.2"]
-                 [compojure "1.1.5"]])
+                 [compojure "1.1.5"]]
+  :main scarabws.run)
+
