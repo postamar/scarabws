@@ -63,13 +63,15 @@
                 (map #(vector (count (first %)) %)
                      (map sort (partition-by count (sort-by count compare all-matches))))))))))
 
-(def scarab (atom {}))
+(def scarab (atom nil))
 
-(defn load-scarab []
-  (swap! scarab (into {} (map (fn [{:keys [language words weights]}]
-                                [language {:info {:language language :size (count words) :counts (make-counts weights)}
-                                           :queryfn (make-queryfn language words weights)}])
-                              (doall (map read-dictionnary-file (filter #(not (.isDirectory %)) (file-seq (clojure.java.io/file "dictionnaries/")))))))))
+(defn load-scarab [scarab-current-value]
+  (if (not (nil? scarab-current-value))
+    scarab-current-value
+    (into {} (map (fn [{:keys [language words weights]}]
+                    [language {:info {:language language :size (count words) :counts (make-counts weights)}
+                               :queryfn (make-queryfn language words weights)}])
+                  (doall (map read-dictionnary-file (filter #(not (.isDirectory %)) (file-seq (clojure.java.io/file "dictionnaries/")))))))))
 
 (defn get-languages []
   (into [] (map first (deref scarab))))
