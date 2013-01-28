@@ -1,6 +1,6 @@
 (defproject scarabws "0.1.0-SNAPSHOT"
   :description "Scarab Web Service"
-  :url "http://example.com/FIXME"
+  :url "http://scarabws.mariusposta.info"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.4.0"]
