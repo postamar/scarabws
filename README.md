@@ -1,6 +1,8 @@
-# scarabws
+scarabws
+========
 
-A web service for testing scrabble letter combinations.
+A rewrite of http://www.kurokatta.org/hacks/scarab as a clojure web service.
+Tests scrabble letter combinations.
 
 ## Usage
 
