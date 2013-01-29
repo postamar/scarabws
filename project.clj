@@ -1,4 +1,4 @@
-(defproject scarabws "0.1.0-SNAPSHOT"
+(defproject scarabws "1.0.0"
   :description "Scarab Web Service"
   :url "http://scarabws.mariusposta.info"
   :license {:name "Eclipse Public License"
