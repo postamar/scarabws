@@ -3,6 +3,7 @@
 /lib
 /classes
 /checkouts
+/dictionnaries/*.clj
 pom.xml
 .project
 .classpath
