@@ -1,6 +1,8 @@
 /target
 /targets
 /lib
+/bin
+/.settings
 /classes
 /checkouts
 /dictionnaries/*.clj
