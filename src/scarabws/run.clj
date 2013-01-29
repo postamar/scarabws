@@ -5,6 +5,5 @@
   (:gen-class))
 
 (defn -main [& args]
-  (swap! scarabws.core/scarab scarabws.core/load-scarab)
+  (swap! scarabws.core/scarab scarabws.core/load-scarab "dictionnaries/")
   (run-jetty #'scarabws.web/app {:port 8050}))
-

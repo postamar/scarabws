@@ -6,6 +6,7 @@
 /dictionnaries/*.clj
 pom.xml
 .project
+.lein-repl-history
 .classpath
 *.jar
 *.class
