@@ -2,41 +2,20 @@
   (:use clojure.java.io)
   (:import java.io.File))
 
-(let [letters [\a \b \c \d \e \f \g \h \i \j \k \l \m \n \o \p \q \r \s \t \u \v \w \x \y \z]]
-  (defn- make-indices [weights]
-    (into {} (map (fn [[char weight] index]
-                    [char index])
-                  (sort (fn [[key1 val1] [key2 val2]] (compare val2 val1)) 
-                        (map vector letters weights))
-                  (range 0 26))))
- 
-  (defn- read-dictionnary-file [file]
-    (let [contents (clojure.string/lower-case (slurp (.getPath file)))
-          freqs (frequencies contents)]
-      {:language (first (clojure.string/split (clojure.string/lower-case (.getName file)) #"\."))
-       :words (re-seq #"\w+" contents)
-       :weights (map #(or (freqs %) 0) letters)}))
-  
-  (defn- make-counts [weights]
-    (reverse (sort-by last compare (map vector (map str letters) weights)))))
+(def letters [\a \b \c \d \e \f \g \h \i \j \k \l \m \n \o \p \q \r \s \t \u \v \w \x \y \z])
 
-(defn- make-trie [words]
-  (letfn [(wordmapfn [{:keys [indices word]}] 
-                     [(first indices) {:indices (rest indices) :word word}])
-          (partfn [part] 
-                  (let [key (first (first part))
-                        value (map last part)]
-                    (if (nil? key)
-                      [:words (map :word value)]
-                      [key (make-trie value)])))]
-    (into {} (if (seq words)
-               (map partfn (partition-by first (sort-by first compare (map wordmapfn words))))))))
-    
+(defn- make-indices [weights]
+  (into {} (map (fn [[char weight] index]
+                  [char index])
+                (sort (fn [[key1 val1] [key2 val2]] (compare val2 val1)) 
+                      (map vector letters weights))
+                (range 0 26))))
+
 (defn- match-in-trie [node indices jokers current]
   (if (seq node)
     (if (empty? indices)
       (if (= current 26)
-        (:words node)
+        (node [])
         (concat (match-in-trie node [] jokers (+ 1 current))
                 (mapcat #(match-in-trie (node (vector current (+ 1 %))) [] (- jokers 1 %) (+ 1 current)) (range 0 jokers))))        
       (let [[[i n] & remaining] indices]
@@ -46,11 +25,20 @@
                   (mapcat #(match-in-trie (node (vector i (+ n 1 %))) remaining (- jokers 1 %) (+ 1 i)) (range 0 jokers)))
           (concat (match-in-trie node indices jokers (+ 1 current))
                   (mapcat #(match-in-trie (node (vector current (+ 1 %))) indices (- jokers 1 %) (+ 1 current)) (range 0 jokers))))))))
-        
+
+(defn- make-trie [level pairs]
+  (let [keys (map #(nth (first %) level []) pairs)]    
+    (into (sorted-map)
+          (map (fn [[key val]]
+                 [key (if (= [] key)                          
+                        (map last val)
+                        (make-trie (inc level) val))])
+               (apply merge-with conj (into {} (map vector (into #{} keys) (repeat []))) (map hash-map keys pairs))))))
+
 (defn- make-queryfn [language words weights]
   (let [indices (make-indices weights)
         indexfn (fn [word] (sort-by first compare (into [] (frequencies (map #(indices %) word)))))
-        trie (make-trie (map #(hash-map :indices (indexfn %) :word %) words))]
+        trie (make-trie 0 (map #(vector (indexfn %) %) words))]
     (fn [word-query all?]
       (let [letters (clojure.string/replace word-query #"_" "")
             query-pattern (re-pattern (clojure.string/replace word-query #"_" "[a-z]"))
@@ -63,15 +51,26 @@
                 (map #(vector (count (first %)) %)
                      (map sort (partition-by count (sort-by count compare all-matches))))))))))
 
+  
+(defn- make-counts [weights]
+  (reverse (sort-by last compare (map vector (map str letters) weights))))
+
 (def scarab (atom nil))
 
 (defn load-scarab [scarab-current-value]
   (if (not (nil? scarab-current-value))
     scarab-current-value
-    (into {} (map (fn [{:keys [language words weights]}]
-                    [language {:info {:language language :size (count words) :counts (make-counts weights)}
-                               :queryfn (make-queryfn language words weights)}])
-                  (doall (map read-dictionnary-file (filter #(not (.isDirectory %)) (file-seq (clojure.java.io/file "dictionnaries/")))))))))
+    (into {} (doall (map (fn [[language contents]]
+                           (let [words (re-seq #"\w+" contents)
+                                 freqs (frequencies contents)
+                                 weights (map #(or (freqs %) 0) letters)]
+                             [language {:info {:language language 
+                                               :size (count words) 
+                                               :counts (make-counts weights)}
+                                        :queryfn (make-queryfn language words weights)}]))
+                         (map #(vector (first (clojure.string/split (clojure.string/lower-case (.getName %)) #"\."))
+                                       (clojure.string/lower-case (slurp (.getPath %))))
+                              (filter #(not (.isDirectory %)) (file-seq (clojure.java.io/file "dictionnaries/")))))))))
 
 (defn get-languages []
   (into [] (map first (deref scarab))))
