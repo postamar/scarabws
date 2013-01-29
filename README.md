@@ -9,7 +9,7 @@ Tests scrabble letter combinations.
 The webservice is currently hosted at `http://mariusposta.info/scarabws` for the moment:
 - GET `http://mariusposta.info/scarabws/` for all available languages,
 - GET `http://mariusposta.info/scarabws/<language>` for some basic statistics regarding `language`,
-- GET `http://mariusposta.info/scarabws/<language>/<letter-query>` for exact- and sub-matches of the letters in `letter_query` for `language`. Lower case letters and '_' for blank tiles only. 
+- GET `http://mariusposta.info/scarabws/<language>/<letter-query>` for exact- and sub-matches of the letters in `letter_query` for `language`. Lower case letters and '_' for blank tiles only. Append with `?exact` for exact matches only.
 
 
 ## License
