@@ -49,23 +49,21 @@
 
 (defn- split-dictionnary-path [file]
   (let [parts (clojure.string/split (clojure.string/lower-case (.getName file)) #"\.")]
-    [(last parts) (clojure.string/join "." (butlast parts)) (.getPath file)]))
+    [(clojure.string/join "." (butlast parts)) (.getPath file) (last parts)]))
   
 (defn- load-dictionnary-files [path]
-  (let [files (map split-dictionnary-path (doall (filter #(not (.isDirectory %)) (file-seq (clojure.java.io/file path)))))
-        clj (into {} (map rest (filter #(= "clj" (first %)) files)))]
+  (let [files (doall (map split-dictionnary-path (filter #(not (.isDirectory %)) (file-seq (clojure.java.io/file path)))))
+        clj (into {} (map pop (filter #(= "clj" (peek %)) files)))]
     (merge (into {} (map (fn [[language clj-file-path]]
                            [language (read-string (slurp clj-file-path))])
                          clj))
            (into {} (map (fn [[language txt-file-path]]
                            (let [clj-file-path (str path language ".clj")
-                                 dict (-> (slurp txt-file-path)
-                                        clojure.string/lower-case
-                                        #(make-dictionnary language %))]
-                        ;     (spit clj-file-path (pr-str dict))
+                                 dict (make-dictionnary language (clojure.string/lower-case (slurp txt-file-path)))]
+                             (spit clj-file-path (pr-str dict))
                              [language dict]))
                          (filter (comp nil? clj first) 
-                                 (map rest (filter #(= "txt" (first %)) files))))))))
+                                 (map pop (filter #(= "txt" (peek %)) files))))))))
 
 (defn load-scarab [scarab-current-value path]
   (if (not (nil? scarab-current-value))
@@ -84,7 +82,7 @@
   (let [dict ((deref scarab) language)
         letters (clojure.string/replace word-query #"_" "")
         jokers (- (count word-query) (count letters))
-        all-matches (into [] (match-in-trie trie ((make-indexfn (dict :indices)) letters) jokers 0))
+        all-matches (into [] (match-in-trie (dict :trie) ((make-indexfn (dict :indices)) letters) jokers 0))
         query-pattern (re-pattern (clojure.string/replace word-query #"_" "[a-z]"))]
     (into {:language language
            :query word-query

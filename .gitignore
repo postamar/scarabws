@@ -5,7 +5,6 @@
 /.settings
 /classes
 /checkouts
-/dictionnaries/*.clj
 pom.xml
 .project
 .lein-repl-history
