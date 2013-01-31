@@ -7,20 +7,20 @@
 (defn- make-indexfn [indices]
   #(sort-by first compare (into [] (frequencies (map indices %)))))
 
-(defn- make-key-string [key]
-  (apply str (doall (mapcat #(repeat (last %) (letters (first %))) key))))
-  
+(defn- make-key-string [key [i c]]
+  (apply str key (repeat c (letters i))))
+
 (defn- make-table [key level pairs]
   (let [child-keys (map #(nth (first %) level []) pairs)
         child-key-set (into #{} child-keys)
         children (apply merge-with conj (zipmap child-key-set (repeat [])) (map hash-map child-keys pairs))
         own (children [])]
-    (into {(make-key-string key) (if own (clojure.string/join "," (map last own)) "")}
-          (mapcat #(make-table (conj key %) (inc level) (children %))
+    (into {key (if own (clojure.string/join "," (map last own)) "")}
+          (mapcat #(make-table (make-key-string key %) (inc level) (children %))
                   (filter seq child-key-set)))))
 
-(defn- match [table keymap node-key k jokers]
-  (when-let [own (table (make-key-string node-key))]
+(defn- match [table keymap key-string k jokers]
+  (when-let [own (table key-string)]
     (apply concat
            (into [] (if (seq own) 
                       (clojure.string/split own #"\,")))
@@ -28,7 +28,7 @@
                  :let [maxval (+ jokers (or (keymap i) 0))]
                  c (range 1 (inc maxval))]
              (match table keymap
-                    (conj node-key [i c])
+                    (make-key-string key-string [i c])
                     (inc i)
                     (min jokers (- maxval c)))))))
   
@@ -85,7 +85,7 @@
         jokers (- (count word-query) (count letters))
         all-matches (match (dict :table) 
                            (into {} ((make-indexfn (dict :indices)) letters)) 
-                           []
+                           ""
                            0
                            (- (count word-query) (count letters)))
         query-pattern (re-pattern (clojure.string/replace word-query #"_" "[a-z]"))]
@@ -93,4 +93,4 @@
            :query word-query
            :exact-matches (filter #(re-matches query-pattern %) all-matches)}
           (map #(vector (count (first %)) (sort %)) 
-               (partition-by count (sort-by count compare (when all? all-matches)))))))
+               (partition-by count (sort-by count compare (if all? all-matches)))))))
