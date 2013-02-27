@@ -1,9 +1,9 @@
 (ns scarabws.run
-  (:use ring.adapter.jetty)
-  (:require scarabws.core)
+  (:use [ring.adapter.jetty :only [run-jetty]])
+  (:use [scarabws.core :only [load-scarab]])
   (:require scarabws.web)
   (:gen-class))
 
 (defn -main [& args]
-  (swap! scarabws.core/scarab scarabws.core/load-scarab "dictionnaries/")
+  (load-scarab "dictionnaries/")
   (run-jetty #'scarabws.web/app {:port 8050}))

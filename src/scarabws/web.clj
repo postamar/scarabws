@@ -1,33 +1,31 @@
 (ns scarabws.web
-  (:require scarabws.core)
+  (:use [scarabws.core :only [language-info language-search]])
   (:use compojure.core)
-  (:use ring.middleware.json)
-  (:use ring.util.response))
+  (:use [ring.middleware.json :only [wrap-json-response]])
+  (:use [ring.util.response :only [not-found response]]))
 
-(defmacro with-language [language & body]
-  `(if (not (contains? (scarabws.core/get-languages) ~language))
-     (not-found {:error (str "invalid language: " ~language)})
-     ~@body))
+(defn- validate-language [language]
+  (and (not (language-info language))
+       (not-found {:error (str "invalid language: " language)})))
 
-(defmacro with-language-and-word-query [language word-query & body]
-  `(with-language ~language
-     (if (or (not (re-matches #"^[a-z_]{2,15}$"     ~word-query))
-             (re-matches #"(?:[a-z]*_){3,}[a-z_]*"  ~word-query))       
-       (not-found {:error (str "invalid word query: " ~word-query)})
-       ~@body)))
+(defn- validate-query [word-query]
+  (and (or (not (re-matches #"^[a-z_]{2,15}$" word-query))
+           (re-matches #"(?:[a-z]*_){3,}[a-z_]*" word-query))       
+       (not-found {:error (str "invalid word query: " word-query)})))
 
 (defroutes handlers 
   (GET "/" 
        []
-       (response (into [] (scarabws.core/get-languages))))
+       (response (language-info)))
   (GET "/:language" 
        [language]
-       (with-language language 
-         (response (scarabws.core/get-language language))))
+       (or (validate-language language)
+           (response (language-info language))))
   (GET "/:language/:word-query"
        {{language :language word-query :word-query} :params query-string :query-string}
-       (with-language-and-word-query language word-query
-         (response (scarabws.core/search-language language word-query (not= query-string "exact")))))
+       (or (validate-language language)
+           (validate-query word-query)
+           (response (language-search language word-query (not= query-string "exact")))))
   (ANY "*" 
        [] 
        (not-found {:error "404 - not found"})))
